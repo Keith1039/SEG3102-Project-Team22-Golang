@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/Keith1039/SEG3102-Project-Team22-Golang/templates"
 	"github.com/a-h/templ"
 	"log"
 	"net/http"
@@ -10,9 +11,9 @@ import (
 func main() {
 	fmt.Println("Hello World")
 
-	s := Hello("Nice")
+	s := templates.Hello("Nice")
 	http.HandleFunc("/add", add)
-	http.HandleFunc("/", templ.Handler(s))
+	http.Handle("/", templ.Handler(s))
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
