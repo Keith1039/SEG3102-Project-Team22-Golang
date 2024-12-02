@@ -37,3 +37,16 @@ func GetUser(ctx context.Context, dbpool *pgxpool.Pool, user *structs.User, emai
 	}
 	return flag
 }
+
+func GetUserByID(ctx context.Context, dbpool *pgxpool.Pool, user *structs.User, userID int) bool {
+	var err error
+	flag := false
+
+	err = pgxscan.Get(ctx, dbpool, user, `SELECT user_id, first_name, last_name, email, role FROM users WHERE user_id=$1;`, userID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false
+	} else {
+		flag = true
+	}
+	return flag
+}

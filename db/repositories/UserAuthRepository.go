@@ -5,16 +5,16 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/Keith1039/SEG3102-Project-Team22-Golang/structs"
+	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 )
 
 func SaveCredentials(ctx context.Context, dbpool *pgxpool.Pool, auth structs.UserAuth) bool {
 	var err error
-	var userID int
 
 	flag := false
-	err = dbpool.QueryRow(ctx, `SELECT user_id FROM user_auth WHERE username=$1`, auth.Username).Scan(&userID)
+	err = dbpool.QueryRow(ctx, `SELECT user_id FROM user_auth WHERE username=$1`, auth.Username).Scan(&auth.UserID)
 	if errors.Is(err, sql.ErrNoRows) {
 		_, err = dbpool.Query(ctx, `INSERT INTO user_auth(username, password, user_id) VALUES ($1, $2, $3);`, auth.Username, auth.Password, auth.UserID)
 		if err != nil {
@@ -25,6 +25,17 @@ func SaveCredentials(ctx context.Context, dbpool *pgxpool.Pool, auth structs.Use
 	return flag
 }
 
+func GetCredentials(ctx context.Context, dbpool *pgxpool.Pool, auth *structs.UserAuth) bool {
+	var err error
+
+	flag := false
+	err = pgxscan.Get(ctx, dbpool, auth, `SELECT user_id FROM user_auth WHERE username=$1 AND password=$2`, auth.Username, auth.Password)
+	if !errors.Is(err, sql.ErrNoRows) {
+		flag = true
+	}
+	return flag
+
+}
 func CheckUsername(ctx context.Context, dbpool *pgxpool.Pool, username string) bool {
 	var err error
 	var userID int
