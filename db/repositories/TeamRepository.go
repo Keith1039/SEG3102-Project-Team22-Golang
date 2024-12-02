@@ -1,12 +1,12 @@
 package repositories
 
 import (
-	"database/sql"
 	"github.com/Keith1039/SEG3102-Project-Team22-Golang/structs"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var teamTable = "TEAMS"
 
-func SaveTeam(team structs.Team, db *sql.DB) {
+func SaveTeam(team structs.Team, dbpool *pgxpool.Pool) {
 
 }

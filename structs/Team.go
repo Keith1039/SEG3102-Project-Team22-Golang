@@ -1,12 +1,9 @@
 package structs
 
-import "time"
-
 type Team struct {
-	TeamID       int
-	ParametersID int
-	TeamName     string
-	CreationDate time.Time
-	Liaison      int
-	Status       string
+	TeamID       int    `db:"team_id"`
+	ParametersID int    `db:"parameters_id"`
+	TeamName     string `db:"team_name"`
+	Liaison      int    `db:"liaison"`
+	Status       string `db:"status"`
 }
