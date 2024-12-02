@@ -1,90 +1,120 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/Keith1039/SEG3102-Project-Team22-Golang/structs"
 	"github.com/Keith1039/SEG3102-Project-Team22-Golang/templates"
 	"github.com/a-h/templ"
-	_ "github.com/lib/pq"
+	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 	"net/http"
+	"os"
 )
 
-type User struct {
-	firstName string
-	lastName  string
-	email     string
-	role      string
-}
-
-var db *sql.DB
+var dbpool *pgxpool.Pool
 var loggedIn bool
-var userStruct User
+var user structs.User
 
-const (
-	host     = "localhost"
-	port     = 5432
-	user     = "postgres"
-	password = "localDB12"
-	dbname   = "postgres"
-)
+var ctx = context.Background()
 
 func init() {
 	var err error
-
-	loggedIn = false
-	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
-	db, err = sql.Open("postgres", connStr)
+	err = os.Setenv("DATABASE_URL", "postgres://postgres:localDB12@localhost:5432/postgres?sslmode=disable")
 	if err != nil {
-		panic(err)
+		return
+	}
+	dbpool, err = pgxpool.New(ctx, os.Getenv("DATABASE_URL"))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to create connection pool: %v\n", err)
+		os.Exit(1)
 	}
 
-	if err = db.Ping(); err != nil {
-		panic(err)
+	var greeting string
+	err = dbpool.QueryRow(ctx, "select 'Hello, world!'").Scan(&greeting)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
+		os.Exit(1)
 	}
-	// this will be printed in the terminal, confirming the connection to the database
+
 	fmt.Println("The database is connected")
 }
 
 func main() {
 
 	s := templates.Login()
+	home := templates.Hello(&user)
+	signUpPage := templates.SignUp()
+
 	http.Handle("/", templ.Handler(s))
+	http.Handle("/home", templ.Handler(home))
+	http.Handle("/register", templ.Handler(signUpPage))
 	http.HandleFunc("/login/", LoginRequest)
+	http.HandleFunc("/signup/", SignUpRequest)
+
 	fmt.Println("listening on port 8080")
+	defer dbpool.Close()
 	log.Fatal(http.ListenAndServe(":8080", nil))
-	defer db.Close()
+
 }
 
 func LoginRequest(w http.ResponseWriter, r *http.Request) {
 	var userId int
-	var firstName string
-	var lastName string
-	var email string
-	var role string
 
 	username := r.PostFormValue("username")
 	userPassword := r.PostFormValue("password")
 
-	err := db.QueryRow(`SELECT user_id FROM user_auth WHERE username=$1 AND password=$2;`, username, userPassword).Scan(&userId)
+	err := dbpool.QueryRow(ctx, `SELECT user_id FROM user_auth WHERE username=$1 AND password=$2;`, username, userPassword).Scan(&userId)
 	if errors.Is(err, sql.ErrNoRows) {
 		fmt.Println("query is broken")
 		log.Fatal(err)
 	} else if err == nil {
 		loggedIn = true
 		fmt.Println("Logging in")
-		row := db.QueryRow(`SELECT first_name, last_name, email, role FROM users WHERE user_id=$1;`, userId)
-		err = row.Scan(&firstName, &lastName, &email, &role)
+		err := pgxscan.Get(ctx, dbpool, &user, `SELECT first_name, last_name, email, role FROM users WHERE user_id=$1;`, userId)
 		if err != nil {
 			panic(err)
 		}
-		userStruct = User{firstName, lastName, email, role}
-		fmt.Println(userStruct)
-		http.Redirect(w, r, "/welcome", http.StatusFound)
+		//user = structs.User{FirstName: firstName, LastName: lastName, Email: email, Role: role}
+		http.Redirect(w, r, "/home", http.StatusFound)
 	} else {
 		fmt.Println("Something broke")
 		panic(err)
 	}
+}
 
+func SignUpRequest(w http.ResponseWriter, r *http.Request) {
+	var userID int
+	username := r.PostFormValue("username")
+	userPassword := r.PostFormValue("password")
+	firstName := r.PostFormValue("first_name")
+	lastName := r.PostFormValue("last_name")
+	email := r.PostFormValue("email")
+	role := r.PostFormValue("role")
+
+	err := dbpool.QueryRow(ctx, `SELECT user_id FROM users WHERE email=$1;`, email).Scan(&userID)
+	if errors.Is(err, sql.ErrNoRows) {
+		//tempUser := structs.User{FirstName: firstName, LastName: lastName, Email: email, Role: role}
+		_, err = dbpool.Query(ctx, `INSERT INTO users(first_name, last_name, email, role) VALUES ($1, $2, $3, $4);`, firstName, lastName, email, role)
+		if err != nil {
+			return
+		}
+
+		err = pgxscan.Get(ctx, dbpool, &user, `SELECT user_id, first_name, last_name, email, role FROM users WHERE email=$1;`, email)
+		if err != nil {
+			log.Println(err)
+		}
+
+		_, err := dbpool.Query(ctx, `INSERT INTO user_auth(username, password, user_id) VALUES ($1, $2, $3);`, username, userPassword, user.UserID)
+		if err != nil {
+			panic(err)
+		}
+		http.Redirect(w, r, "/home", http.StatusFound)
+
+	} else {
+		fmt.Println("email already exists")
+	}
 }
