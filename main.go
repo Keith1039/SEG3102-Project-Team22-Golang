@@ -2,14 +2,11 @@ package main
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"fmt"
 	"github.com/Keith1039/SEG3102-Project-Team22-Golang/db/repositories"
 	"github.com/Keith1039/SEG3102-Project-Team22-Golang/structs"
 	"github.com/Keith1039/SEG3102-Project-Team22-Golang/templates"
 	"github.com/a-h/templ"
-	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 	"net/http"
@@ -53,6 +50,7 @@ func main() {
 	http.Handle("/", templ.Handler(s))
 	http.Handle("/home", templ.Handler(home))
 	http.Handle("/register", templ.Handler(signUpPage))
+
 	http.HandleFunc("/login/", LoginRequest)
 	http.HandleFunc("/signup/", SignUpRequest)
 
@@ -63,27 +61,17 @@ func main() {
 }
 
 func LoginRequest(w http.ResponseWriter, r *http.Request) {
-	var userId int
-
 	username := r.PostFormValue("username")
 	userPassword := r.PostFormValue("password")
+	tempAuth := structs.UserAuth{Username: username, Password: userPassword}
 
-	err := dbpool.QueryRow(ctx, `SELECT user_id FROM user_auth WHERE username=$1 AND password=$2;`, username, userPassword).Scan(&userId)
-	if errors.Is(err, sql.ErrNoRows) {
-		fmt.Println("query is broken")
-		log.Fatal(err)
-	} else if err == nil {
-		loggedIn = true
+	flag := repositories.GetCredentials(ctx, dbpool, &tempAuth)
+	if flag {
 		fmt.Println("Logging in")
-		err := pgxscan.Get(ctx, dbpool, &user, `SELECT first_name, last_name, email, role FROM users WHERE user_id=$1;`, userId)
-		if err != nil {
-			panic(err)
-		}
-		//user = structs.User{FirstName: firstName, LastName: lastName, Email: email, Role: role}
+		repositories.GetUserByID(ctx, dbpool, &user, tempAuth.UserID)
 		http.Redirect(w, r, "/home", http.StatusFound)
 	} else {
-		fmt.Println("Something broke")
-		panic(err)
+		fmt.Println("User not found")
 	}
 }
 
