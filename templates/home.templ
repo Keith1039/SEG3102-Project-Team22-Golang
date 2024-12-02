@@ -1,5 +1,8 @@
 package templates
 
-templ Hello(name string) {
-    <div>Hello, {name} </div>
+import (
+    "github.com/Keith1039/SEG3102-Project-Team22-Golang/structs"
+)
+templ Hello(user *structs.User) {
+    <div>Hello, {user.FirstName + " " + user.LastName} </div>
 }
