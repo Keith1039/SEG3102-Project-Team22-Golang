@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/Keith1039/SEG3102-Project-Team22-Golang/db/repositories"
 	"github.com/Keith1039/SEG3102-Project-Team22-Golang/structs"
 	"github.com/Keith1039/SEG3102-Project-Team22-Golang/templates"
 	"github.com/a-h/templ"
@@ -87,7 +88,6 @@ func LoginRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func SignUpRequest(w http.ResponseWriter, r *http.Request) {
-	var userID int
 	username := r.PostFormValue("username")
 	userPassword := r.PostFormValue("password")
 	firstName := r.PostFormValue("first_name")
@@ -95,26 +95,22 @@ func SignUpRequest(w http.ResponseWriter, r *http.Request) {
 	email := r.PostFormValue("email")
 	role := r.PostFormValue("role")
 
-	err := dbpool.QueryRow(ctx, `SELECT user_id FROM users WHERE email=$1;`, email).Scan(&userID)
-	if errors.Is(err, sql.ErrNoRows) {
-		//tempUser := structs.User{FirstName: firstName, LastName: lastName, Email: email, Role: role}
-		_, err = dbpool.Query(ctx, `INSERT INTO users(first_name, last_name, email, role) VALUES ($1, $2, $3, $4);`, firstName, lastName, email, role)
-		if err != nil {
-			return
+	tempAuth := structs.UserAuth{UserID: 0, Username: username, Password: userPassword}
+	if repositories.CheckUsername(ctx, dbpool, tempAuth.Username) {
+		tempUser := structs.User{UserID: 0, FirstName: firstName, LastName: lastName, Email: email, Role: role}
+		flag := repositories.SaveUser(ctx, dbpool, tempUser)
+		if flag {
+			flag = repositories.GetUser(ctx, dbpool, &user, tempUser.Email)
+			if flag {
+				tempAuth.UserID = user.UserID
+				repositories.SaveCredentials(ctx, dbpool, tempAuth)
+			}
+			http.Redirect(w, r, "/home", http.StatusFound)
+		} else {
+			fmt.Println("email already exists")
 		}
-
-		err = pgxscan.Get(ctx, dbpool, &user, `SELECT user_id, first_name, last_name, email, role FROM users WHERE email=$1;`, email)
-		if err != nil {
-			log.Println(err)
-		}
-
-		_, err := dbpool.Query(ctx, `INSERT INTO user_auth(username, password, user_id) VALUES ($1, $2, $3);`, username, userPassword, user.UserID)
-		if err != nil {
-			panic(err)
-		}
-		http.Redirect(w, r, "/home", http.StatusFound)
-
 	} else {
-		fmt.Println("email already exists")
+		fmt.Println("username already taken")
 	}
+
 }
