@@ -61,7 +61,7 @@ func main() {
 	http.HandleFunc("/create-parameter/", HandleParameterCreation)
 	http.HandleFunc("/get-teams/", GetTeamsAndRedirect)
 	http.HandleFunc("/team-edit", GetTeamAndRedirect)
-	//http.HandleFunc("/edit-team", )
+	http.HandleFunc("/edit-team", ValidateAndSave)
 
 	fmt.Println("listening on port 8080")
 	defer dbpool.Close()
@@ -161,27 +161,27 @@ func ValidateAndSave(w http.ResponseWriter, r *http.Request) {
 	tempTeam := structs.Team{}
 	tempParams := structs.Parameters{}
 	var err error
-	fmt.Println(r.PostFormValue("parameter_id"))
-	paramID, err = strconv.Atoi(r.PostFormValue("parameter_id"))
+
+	paramID = params.ParametersID
 	tempParams.ParametersID = paramID
 	minimum, err = strconv.Atoi(r.PostFormValue("minimum"))
 	if err != nil {
-		errors["MinimumCount"] = "Invalid value entered"
+		errors["Minimum"] = "Invalid value entered"
 	} else {
 		tempParams.MinimumCount = minimum
 	}
 
 	maximum, err = strconv.Atoi(r.PostFormValue("maximum"))
 	if err != nil {
-		errors["MaximumCount"] = "Invalid value entered"
+		errors["Maximum"] = "Invalid value entered"
 	} else {
 		tempParams.MaximumCount = maximum
 	}
-
-	teamID, err = strconv.Atoi(r.PostFormValue("team_id"))
+	teamID = team.TeamID
 	tempTeam.TeamID = teamID
 	teamName := r.PostFormValue("team_name")
 	tempTeam.TeamName = teamName
+
 	liaison, err = strconv.Atoi(r.PostFormValue("liaison"))
 	if err != nil {
 		errors["liaison"] = "Invalid value"
@@ -190,14 +190,24 @@ func ValidateAndSave(w http.ResponseWriter, r *http.Request) {
 			tempTeam.Liaison = liaison
 		} else {
 			errors["liaison"] = "Student number doesn't exist"
-
 		}
 	}
 
 	if len(errors) > 0 {
+		fmt.Println("inputed data is bad")
+		fmt.Println(errors)
+
+	} else {
 		errors = tempParams.Validate()
 		if len(errors) > 0 {
-			// now we can save
+			fmt.Println("failed validate")
+			fmt.Println(errors)
+
+		} else {
+			repositories.UpdateTeam(ctx, dbpool, &tempTeam)
+			repositories.UpdateParameters(ctx, dbpool, &tempParams)
+			team = tempTeam
+			params = tempParams
 		}
 	}
 	Render(w, r, templates.TeamEdit(&tempTeam, &tempParams, errors))

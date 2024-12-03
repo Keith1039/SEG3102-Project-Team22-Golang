@@ -59,7 +59,10 @@ templ TeamEdit(teamValues *structs.Team, paramValues *structs.Parameters, errors
         </head>
 
         <form hx-post="/edit-team" hx-indicator="#spinner">
-            <div id="team_id">Team ID: {strconv.Itoa(teamValues.TeamID)}</div>
+            <div class="mb-2">
+                <label for="team_id">Team ID: </label>
+                <input type="text" name="team_id" id="team_id" class="form-control" value={strconv.Itoa(teamValues.TeamID)} disabled/>
+            </div>
             <div class="mb-2">
                 <label for="team_name">Team Name: </label>
                 <input type="text" name="team_name" id="team_name" class="form-control" value={teamValues.TeamName}/>
@@ -67,6 +70,9 @@ templ TeamEdit(teamValues *structs.Team, paramValues *structs.Parameters, errors
             <div class="mb-3">
                 <label for="liaison">Liaison Student Number: </label>
                 <input type="text" name="liaison" id="liaison" class="form-control" value={strconv.Itoa(teamValues.Liaison)}/>
+                if errors["liaison"] != "" {
+                    <div style="color:red">{errors["liaison"]}</div>
+                 }
             </div>
             @UpdateParameters(paramValues, errors)
 

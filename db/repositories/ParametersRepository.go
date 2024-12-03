@@ -35,9 +35,9 @@ func GetParameters(ctx context.Context, dbpool *pgxpool.Pool, params *structs.Pa
 	return flag
 }
 
-func UpdateParameters(ctx context.Context, dbpool *pgxpool.Pool, param structs.Parameters, paramID int) bool {
+func UpdateParameters(ctx context.Context, dbpool *pgxpool.Pool, param *structs.Parameters) bool {
 	flag := false
-	_, err := dbpool.Query(ctx, "UPDATE parameters SET min_count=$1, max_count=$2 WHERE parameters_id=$3;", param.MinimumCount, param.MaximumCount, paramID)
+	_, err := dbpool.Query(ctx, "UPDATE parameters SET min_count=$1, max_count=$2 WHERE parameters_id=$3;", param.MinimumCount, param.MaximumCount, param.ParametersID)
 	if err != nil {
 		log.Fatal(err)
 	} else {
