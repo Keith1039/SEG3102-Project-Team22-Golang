@@ -17,6 +17,7 @@ import (
 var (
 	dbpool *pgxpool.Pool
 	user   structs.User
+	team   structs.Team
 	ctx    = context.Background()
 )
 
@@ -52,12 +53,14 @@ func main() {
 	login := templates.Login(initialLogin, "")                                                    // initially we have nothing in the form
 	createParamsPage := templates.ParameterCreate(initialParamsCreate, map[string]string{"Minimum": "", "Maximum": ""})
 	teams := templates.Teams(&user, repositories.GetAllTeams(ctx, dbpool))
+	teamEdit := templates.TeamEdit(&team)
 
 	http.Handle("/", templ.Handler(login))
 	http.Handle("/home", templ.Handler(home))
 	http.Handle("/signup", templ.Handler(signUpPage))
 	http.Handle("/params-create", templ.Handler(createParamsPage))
 	http.Handle("/teams", templ.Handler(teams))
+	http.Handle("/team", templ.Handler(teamEdit))
 
 	http.HandleFunc("/login/", HandleLoginRequest)
 	http.HandleFunc("/register/", HandleSignUpRequest)
@@ -151,7 +154,9 @@ func GetTeamsAndRedirect(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetTeamAndRedirect(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.URL.Query().Get("id"))
+	teamID, _ := strconv.Atoi(r.PostFormValue("team_id"))
+	repositories.GetTeam(ctx, dbpool, &team, teamID)
+	hxRedirect(w, r, "/team")
 }
 
 func hxRedirect(w http.ResponseWriter, r *http.Request, url string) error {

@@ -1,6 +1,10 @@
 package templates
 
-import "strconv"
+
+import (
+    "strconv"
+    "github.com/Keith1039/SEG3102-Project-Team22-Golang/structs"
+)
 
 type ParametersForm struct {
     ParametersID string
@@ -69,7 +73,7 @@ templ ParameterCreate(values ParametersForm, errors map[string]string) {
     </html>
 }
 
-templ UpdateParameter(values ParametersForm, errors map[string]string) {
+templ UpdateParameter(values ParametersForm, teamInformation structs.Team, errors map[string]string) {
         <html lang="en">
         <head>
             <meta charset="UTF-8">
