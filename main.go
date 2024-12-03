@@ -18,6 +18,7 @@ var (
 	dbpool *pgxpool.Pool
 	user   structs.User
 	team   structs.Team
+	params structs.Parameters
 	ctx    = context.Background()
 )
 
@@ -53,7 +54,7 @@ func main() {
 	login := templates.Login(initialLogin, "")                                                    // initially we have nothing in the form
 	createParamsPage := templates.ParameterCreate(initialParamsCreate, map[string]string{"Minimum": "", "Maximum": ""})
 	teams := templates.Teams(&user, repositories.GetAllTeams(ctx, dbpool))
-	teamEdit := templates.TeamEdit(&team)
+	teamEdit := templates.TeamEdit(&team, &params, map[string]string{})
 
 	http.Handle("/", templ.Handler(login))
 	http.Handle("/home", templ.Handler(home))
@@ -67,6 +68,7 @@ func main() {
 	http.HandleFunc("/create-parameter/", HandleParameterCreation)
 	http.HandleFunc("/get-teams/", GetTeamsAndRedirect)
 	http.HandleFunc("/team-edit", GetTeamAndRedirect)
+	//http.HandleFunc("/edit-team", )
 
 	fmt.Println("listening on port 8080")
 	defer dbpool.Close()
@@ -154,8 +156,11 @@ func GetTeamsAndRedirect(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetTeamAndRedirect(w http.ResponseWriter, r *http.Request) {
-	teamID, _ := strconv.Atoi(r.PostFormValue("team_id"))
+	var params structs.Parameters
+	teamID, _ := strconv.Atoi(r.URL.Query().Get("id"))
 	repositories.GetTeam(ctx, dbpool, &team, teamID)
+	repositories.GetParameters(ctx, dbpool, &params, team.ParametersID)
+
 	hxRedirect(w, r, "/team")
 }
 

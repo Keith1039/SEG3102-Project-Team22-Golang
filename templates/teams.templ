@@ -47,7 +47,7 @@ templ Teams(user *structs.User, teams []*structs.Team){
     </html>
 }
 
-templ TeamEdit(values *structs.Team){
+templ TeamEdit(teamValues *structs.Team, paramValues *structs.Parameters, errors map[string]string){
  <html lang="en">
         <head>
             <meta charset="UTF-8">
@@ -61,17 +61,19 @@ templ TeamEdit(values *structs.Team){
         <form hx-post="/edit-team" hx-indicator="#spinner">
             <div class="mb-2">
                 <label for="team_name">Team Name: </label>
-                <input type="text" name="team_name" id="team_name" class="form-control" value={values.TeamName}/>
+                <input type="text" name="team_name" id="team_name" class="form-control" value={teamValues.TeamName}/>
             </div>
             <div class="mb-3">
                 <label for="liaison">Liaison: </label>
-                <input type="text" name="liaison" id="liaison" class="form-control" value={strconv.Itoa(values.Liaison)}/>
+                <input type="text" name="liaison" id="liaison" class="form-control" value={strconv.Itoa(teamValues.Liaison)}/>
             </div>
+            @UpdateParameters(paramValues, errors)
 
             <button type="submit" class="btn btn-primary">
                 <span class="spinner-border spinner-border-sm htmx-indicator" id="spinner" role="status" aria-hidden="true"></span>
                 Submit
             </button>
         </form>
+
    </html>
 }

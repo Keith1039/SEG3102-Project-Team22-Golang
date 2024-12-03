@@ -141,7 +141,7 @@ func Teams(user *structs.User, teams []*structs.Team) templ.Component {
 	})
 }
 
-func TeamEdit(values *structs.Team) templ.Component {
+func TeamEdit(teamValues *structs.Team, paramValues *structs.Parameters, errors map[string]string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -167,9 +167,9 @@ func TeamEdit(values *structs.Team) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var9 string
-		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(values.TeamName)
+		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(teamValues.TeamName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/teams.templ`, Line: 64, Col: 110}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/teams.templ`, Line: 64, Col: 114}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -180,15 +180,23 @@ func TeamEdit(values *structs.Team) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var10 string
-		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(values.Liaison))
+		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(teamValues.Liaison))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/teams.templ`, Line: 68, Col: 119}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/teams.templ`, Line: 68, Col: 123}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"></div><button type=\"submit\" class=\"btn btn-primary\"><span class=\"spinner-border spinner-border-sm htmx-indicator\" id=\"spinner\" role=\"status\" aria-hidden=\"true\"></span> Submit</button></form></html>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = UpdateParameters(paramValues, errors).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<button type=\"submit\" class=\"btn btn-primary\"><span class=\"spinner-border spinner-border-sm htmx-indicator\" id=\"spinner\" role=\"status\" aria-hidden=\"true\"></span> Submit</button></form></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
