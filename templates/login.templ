@@ -29,6 +29,7 @@ templ Login(values LoginForm, err string){
                 <div style="color:red">{err}</div>
             }
 
+            <button type="button" class="btn btn-primary" onclick="location.assign('/register')"> Sign Up</button>
             <button type="submit" class="btn btn-primary">
                 <span class="spinner-border spinner-border-sm htmx-indicator" id="spinner" role="status" aria-hidden="true"></span>
                 Submit
