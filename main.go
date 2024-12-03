@@ -42,17 +42,21 @@ func init() {
 }
 
 func main() {
+	initialSignUp := templates.SignUpForm{"", "", "", "", "", ""}
+	errors := map[string]string{}
+	errors["Username"] = ""
+	errors["Email"] = ""
 
 	s := templates.Login()
 	home := templates.Hello(&user)
-	signUpPage := templates.SignUp()
+	signUpPage := templates.SignUp(initialSignUp, errors) // initially have nothing in the form
 
 	http.Handle("/", templ.Handler(s))
 	http.Handle("/home", templ.Handler(home))
 	http.Handle("/register", templ.Handler(signUpPage))
 
-	http.HandleFunc("/login/", LoginRequest)
-	http.HandleFunc("/signup/", SignUpRequest)
+	http.HandleFunc("/login/", HandleLoginRequest)
+	http.HandleFunc("/signup/", HandleSignUpRequest)
 
 	fmt.Println("listening on port 8080")
 	defer dbpool.Close()
@@ -60,7 +64,7 @@ func main() {
 
 }
 
-func LoginRequest(w http.ResponseWriter, r *http.Request) {
+func HandleLoginRequest(w http.ResponseWriter, r *http.Request) {
 	username := r.PostFormValue("username")
 	userPassword := r.PostFormValue("password")
 	tempAuth := structs.UserAuth{Username: username, Password: userPassword}
@@ -69,19 +73,26 @@ func LoginRequest(w http.ResponseWriter, r *http.Request) {
 	if flag {
 		fmt.Println("Logging in")
 		repositories.GetUserByID(ctx, dbpool, &user, tempAuth.UserID)
-		http.Redirect(w, r, "/home", http.StatusFound)
+		//http.Redirect(w, r, "/home", http.StatusFound)
+		hxRedirect(w, r, "/home")
 	} else {
 		fmt.Println("User not found")
 	}
 }
 
-func SignUpRequest(w http.ResponseWriter, r *http.Request) {
+func HandleSignUpRequest(w http.ResponseWriter, r *http.Request) {
+	errors := map[string]string{}
 	username := r.PostFormValue("username")
 	userPassword := r.PostFormValue("password")
 	firstName := r.PostFormValue("first_name")
 	lastName := r.PostFormValue("last_name")
 	email := r.PostFormValue("email")
 	role := r.PostFormValue("role")
+
+	errors["Username"] = ""
+	errors["Email"] = ""
+
+	values := templates.SignUpForm{Username: username, Password: userPassword, FirstName: firstName, LastName: lastName, Email: email, Role: role}
 
 	tempAuth := structs.UserAuth{UserID: 0, Username: username, Password: userPassword}
 	if repositories.CheckUsername(ctx, dbpool, tempAuth.Username) {
@@ -93,12 +104,29 @@ func SignUpRequest(w http.ResponseWriter, r *http.Request) {
 				tempAuth.UserID = user.UserID
 				repositories.SaveCredentials(ctx, dbpool, tempAuth)
 			}
-			http.Redirect(w, r, "/home", http.StatusFound)
+			//http.Redirect(w, r, "/home", http.StatusFound)
+			hxRedirect(w, r, "/home")
 		} else {
-			fmt.Println("email already exists")
+			errors["Email"] = "Email already exists"
+			Render(w, r, templates.SignUp(values, errors))
 		}
 	} else {
-		fmt.Println("username already taken")
+		errors["Username"] = "Username already exists"
+		Render(w, r, templates.SignUp(values, errors))
 	}
 
+}
+
+func hxRedirect(w http.ResponseWriter, r *http.Request, url string) error {
+	if len(r.Header.Get("HX-Request")) > 0 {
+		w.Header().Set("HX-Redirect", url)
+		w.WriteHeader(http.StatusSeeOther)
+		return nil
+	}
+	http.Redirect(w, r, url, http.StatusSeeOther)
+	return nil
+}
+
+func Render(w http.ResponseWriter, r *http.Request, c templ.Component) error {
+	return c.Render(r.Context(), w)
 }

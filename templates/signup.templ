@@ -1,6 +1,15 @@
 package templates
 
-templ SignUp(){
+type SignUpForm struct {
+	Username  string
+	Password  string
+	FirstName string
+	LastName  string
+	Email     string
+	Role string
+}
+
+templ SignUp(values SignUpForm, errors map[string]string){
     <html lang="en">
         <head>
             <meta charset="UTF-8">
@@ -14,27 +23,33 @@ templ SignUp(){
         <form hx-post="/signup/" hx-indicator="#spinner">
             <div class="mb-2">
                 <label for="username">Username: </label>
-                <input type="text" name="username" id="username" class="form-control" />
+                <input type="text" name="username" id="username" class="form-control" value={values.Username}/>
+                if errors["Username"] != "" {
+                    <div style="color:red">{errors["Username"]}</div>
+                }
             </div>
             <div class="mb-3">
                 <label for="password">Password: </label>
-                <input type="text" name="password" id="password" class="form-control" />
+                <input type="text" name="password" id="password" class="form-control" value={values.Password}/>
             </div>
             <div class="mb-3">
                 <label for="first_name">First Name: </label>
-                <input type="text" name="first_name" id="first_name" class="form-control" />
+                <input type="text" name="first_name" id="first_name" class="form-control" value={values.FirstName}/>
             </div>
             <div class="mb-2">
                 <label for="last_name">Last Name: </label>
-                <input type="text" name="last_name" id="last_name" class="form-control" />
+                <input type="text" name="last_name" id="last_name" class="form-control" value={values.LastName}/>
             </div>
            <div class="mb-3">
                 <label for="email">Email: </label>
-                <input type="text" name="email" id="email" class="form-control" />
+                <input type="text" name="email" id="email" class="form-control" value={values.Email}/>
+                if errors["Email"] != "" {
+                    <div style="color:red">{errors["Email"]}</div>
+                }
             </div>
             <div class="mb-2">
                 <label for="role">Role : </label>
-                <input type="text" name="role" id="role" class="form-control" />
+                <input type="text" name="role" id="role" class="form-control" value={values.Role}/>
             </div>
 
             <button type="submit" class="btn btn-primary">
