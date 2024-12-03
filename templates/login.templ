@@ -1,6 +1,11 @@
 package templates
 
-templ Login(){
+type LoginForm struct {
+    Username string
+    Password string
+}
+
+templ Login(values LoginForm, err string){
     <html lang="en">
         <head>
             <meta charset="UTF-8">
@@ -14,12 +19,15 @@ templ Login(){
         <form hx-post="/login/" hx-indicator="#spinner">
             <div class="mb-2">
                 <label for="username">Username: </label>
-                <input type="text" name="username" id="username" class="form-control" />
+                <input type="text" name="username" id="username" class="form-control" value={values.Username}/>
             </div>
             <div class="mb-3">
                 <label for="password">Password: </label>
-                <input type="text" name="password" id="password" class="form-control" />
+                <input type="text" name="password" id="password" class="form-control" value={values.Password}/>
             </div>
+            if err != "" {
+                <div style="color:red">{err}</div>
+            }
 
             <button type="submit" class="btn btn-primary">
                 <span class="spinner-border spinner-border-sm htmx-indicator" id="spinner" role="status" aria-hidden="true"></span>

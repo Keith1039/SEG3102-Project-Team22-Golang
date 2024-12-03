@@ -43,15 +43,13 @@ func init() {
 
 func main() {
 	initialSignUp := templates.SignUpForm{"", "", "", "", "", ""}
-	errors := map[string]string{}
-	errors["Username"] = ""
-	errors["Email"] = ""
+	initialLogin := templates.LoginForm{Username: "", Password: ""}
 
-	s := templates.Login()
 	home := templates.Hello(&user)
-	signUpPage := templates.SignUp(initialSignUp, errors) // initially have nothing in the form
+	signUpPage := templates.SignUp(initialSignUp, map[string]string{"Username": "", "Email": ""}) // initially have nothing in the form
+	login := templates.Login(initialLogin, "")                                                    // initially we have nothing in the form
 
-	http.Handle("/", templ.Handler(s))
+	http.Handle("/", templ.Handler(login))
 	http.Handle("/home", templ.Handler(home))
 	http.Handle("/register", templ.Handler(signUpPage))
 
@@ -76,7 +74,7 @@ func HandleLoginRequest(w http.ResponseWriter, r *http.Request) {
 		//http.Redirect(w, r, "/home", http.StatusFound)
 		hxRedirect(w, r, "/home")
 	} else {
-		fmt.Println("User not found")
+		Render(w, r, templates.Login(templates.LoginForm{Username: username, Password: userPassword}, "username or password is incorrect"))
 	}
 }
 
