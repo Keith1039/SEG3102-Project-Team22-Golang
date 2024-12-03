@@ -13,11 +13,13 @@ func SaveTeam(ctx context.Context, dbpool *pgxpool.Pool, team structs.Team) {
 
 }
 
-func GetAllTeams(ctx context.Context, dbpool *pgxpool.Pool) []structs.Team {
-	var teams []structs.Team
-	err := pgxscan.Get(ctx, dbpool, &teams, `SELECT * FROM teams`)
+func GetAllTeams(ctx context.Context, dbpool *pgxpool.Pool) []*structs.Team {
+	var teams []*structs.Team
+	rows, err := dbpool.Query(ctx, `SELECT team_id, team_name, liaison, parameters_id FROM teams`)
+	err = pgxscan.ScanAll(&teams, rows)
 	if err != nil {
-		return teams
+		return nil
 	}
+
 	return teams
 }

@@ -6,7 +6,7 @@ import (
 )
 
 
-templ Teams(user *structs.User, teams []structs.Team){
+templ Teams(user *structs.User, teams []*structs.Team){
     if user.Role == "ADMIN" {
         @NavbarAdmin()
     } else {
