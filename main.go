@@ -132,7 +132,7 @@ func HandleParameterCreation(w http.ResponseWriter, r *http.Request) {
 		maxCount, err2 = strconv.Atoi(r.PostFormValue("maximum"))
 		if err == nil && err2 == nil {
 			params := structs.Parameters{MinimumCount: minCount, MaximumCount: maxCount}
-			repositories.SaveParameters(ctx, params, dbpool)
+			repositories.SaveParameters(ctx, dbpool, params)
 			Render(w, r, templates.ParameterCreate(templates.ParametersForm{Minimum: "", Maximum: ""}, errors))
 		} else {
 			errors["Conversion"] = "Conversion error"
