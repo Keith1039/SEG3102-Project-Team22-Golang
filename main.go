@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 )
 
 var dbpool *pgxpool.Pool
@@ -44,17 +45,21 @@ func init() {
 func main() {
 	initialSignUp := templates.SignUpForm{"", "", "", "", "", ""}
 	initialLogin := templates.LoginForm{Username: "", Password: ""}
+	initialParamsCreate := templates.ParametersForm{Minimum: "", Maximum: ""}
 
 	home := templates.Hello(&user)
 	signUpPage := templates.SignUp(initialSignUp, map[string]string{"Username": "", "Email": ""}) // initially have nothing in the form
 	login := templates.Login(initialLogin, "")                                                    // initially we have nothing in the form
+	createParamsPage := templates.ParameterCreate(initialParamsCreate, map[string]string{"Minimum": "", "Maximum": ""})
 
 	http.Handle("/", templ.Handler(login))
 	http.Handle("/home", templ.Handler(home))
 	http.Handle("/register", templ.Handler(signUpPage))
+	http.Handle("/params-create", templ.Handler(createParamsPage))
 
 	http.HandleFunc("/login/", HandleLoginRequest)
 	http.HandleFunc("/signup/", HandleSignUpRequest)
+	http.HandleFunc("/create-parameter/", HandleParameterCreation)
 
 	fmt.Println("listening on port 8080")
 	defer dbpool.Close()
@@ -112,9 +117,29 @@ func HandleSignUpRequest(w http.ResponseWriter, r *http.Request) {
 		errors["Username"] = "Username already exists"
 		Render(w, r, templates.SignUp(values, errors))
 	}
-
 }
 
+func HandleParameterCreation(w http.ResponseWriter, r *http.Request) {
+	var minCount int
+	var maxCount int
+	var err, err2 error
+	paramForm := templates.ParametersForm{Minimum: r.PostFormValue("minimum"), Maximum: r.PostFormValue("maximum")}
+	errors := paramForm.Validate()
+	if len(errors) > 0 {
+		Render(w, r, templates.ParameterCreate(paramForm, errors))
+	} else {
+		minCount, err = strconv.Atoi(r.PostFormValue("minimum"))
+		maxCount, err2 = strconv.Atoi(r.PostFormValue("maximum"))
+		if err == nil && err2 == nil {
+			params := structs.Parameters{MinimumCount: minCount, MaximumCount: maxCount}
+			repositories.SaveParameters(ctx, params, dbpool)
+			Render(w, r, templates.ParameterCreate(templates.ParametersForm{Minimum: "", Maximum: ""}, errors))
+		} else {
+			errors["Conversion"] = "Conversion error"
+			Render(w, r, templates.ParameterCreate(paramForm, errors))
+		}
+	}
+}
 func hxRedirect(w http.ResponseWriter, r *http.Request, url string) error {
 	if len(r.Header.Get("HX-Request")) > 0 {
 		w.Header().Set("HX-Redirect", url)
