@@ -1,5 +1,34 @@
 package templates
 
-templ Teams(){
-    <div>Teams</div>
+import (
+    "github.com/Keith1039/SEG3102-Project-Team22-Golang/structs"
+    "strconv"
+)
+
+
+templ Teams(user *structs.User, teams []structs.Team){
+    if user.Role == "ADMIN" {
+        @NavbarAdmin()
+    } else {
+        @NavbarStudent()
+    }
+    <table>
+        <tr>
+            <th>Team ID</th>
+            <th>Team Parameters ID</th>
+            <th>Team Name</th>
+            <th>Team Liaison</th>
+            <th>Team Status</th>
+        </tr>
+        for _, team := range teams {
+            <tr>
+                <td>{strconv.Itoa(team.TeamID)}</td>
+                <td>{strconv.Itoa(team.ParametersID)}</td>
+                <td>{team.TeamName}</td>
+                <td>{strconv.Itoa(team.Liaison)}</td>
+                <td>{team.Status}</td>
+            </tr>
+        }
+    </table>
+
 }

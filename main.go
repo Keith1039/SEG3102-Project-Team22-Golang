@@ -14,11 +14,11 @@ import (
 	"strconv"
 )
 
-var dbpool *pgxpool.Pool
-var loggedIn bool
-var user structs.User
-
-var ctx = context.Background()
+var (
+	dbpool *pgxpool.Pool
+	user   structs.User
+	ctx    = context.Background()
+)
 
 func init() {
 	var err error
@@ -51,15 +51,18 @@ func main() {
 	signUpPage := templates.SignUp(initialSignUp, map[string]string{"Username": "", "Email": ""}) // initially have nothing in the form
 	login := templates.Login(initialLogin, "")                                                    // initially we have nothing in the form
 	createParamsPage := templates.ParameterCreate(initialParamsCreate, map[string]string{"Minimum": "", "Maximum": ""})
+	teams := templates.Teams(&user, repositories.GetAllTeams(ctx, dbpool))
 
 	http.Handle("/", templ.Handler(login))
 	http.Handle("/home", templ.Handler(home))
-	http.Handle("/register", templ.Handler(signUpPage))
+	http.Handle("/signup", templ.Handler(signUpPage))
 	http.Handle("/params-create", templ.Handler(createParamsPage))
+	http.Handle("/teams", templ.Handler(teams))
 
 	http.HandleFunc("/login/", HandleLoginRequest)
-	http.HandleFunc("/signup/", HandleSignUpRequest)
+	http.HandleFunc("/register/", HandleSignUpRequest)
 	http.HandleFunc("/create-parameter/", HandleParameterCreation)
+	http.HandleFunc("/get-teams/", GetTeamsAndRedirect)
 
 	fmt.Println("listening on port 8080")
 	defer dbpool.Close()
@@ -140,6 +143,12 @@ func HandleParameterCreation(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 }
+
+func GetTeamsAndRedirect(w http.ResponseWriter, r *http.Request) {
+	teams := repositories.GetAllTeams(ctx, dbpool)
+	Render(w, r, templates.Teams(&user, teams))
+}
+
 func hxRedirect(w http.ResponseWriter, r *http.Request, url string) error {
 	if len(r.Header.Get("HX-Request")) > 0 {
 		w.Header().Set("HX-Redirect", url)
