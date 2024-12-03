@@ -63,6 +63,7 @@ func main() {
 	http.HandleFunc("/register/", HandleSignUpRequest)
 	http.HandleFunc("/create-parameter/", HandleParameterCreation)
 	http.HandleFunc("/get-teams/", GetTeamsAndRedirect)
+	http.HandleFunc("/team-edit", GetTeamAndRedirect)
 
 	fmt.Println("listening on port 8080")
 	defer dbpool.Close()
@@ -147,6 +148,10 @@ func HandleParameterCreation(w http.ResponseWriter, r *http.Request) {
 func GetTeamsAndRedirect(w http.ResponseWriter, r *http.Request) {
 	teams := repositories.GetAllTeams(ctx, dbpool)
 	Render(w, r, templates.Teams(&user, teams))
+}
+
+func GetTeamAndRedirect(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(r.URL.Query().Get("id"))
 }
 
 func hxRedirect(w http.ResponseWriter, r *http.Request, url string) error {
