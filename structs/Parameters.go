@@ -3,9 +3,9 @@ package structs
 import "time"
 
 type Parameters struct {
-	ParametersID int       `db:"parameter_id"`
-	MinimumCount int       `db:"minimum_count"`
-	MaximumCount int       `db:"maximum_count"`
+	ParametersID int       `db:"parameters_id"`
+	MinimumCount int       `db:"min_count"`
+	MaximumCount int       `db:"max_count"`
 	Deadline     time.Time `db:"deadline"`
 }
 

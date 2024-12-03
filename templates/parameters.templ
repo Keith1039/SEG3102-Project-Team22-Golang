@@ -74,7 +74,7 @@ templ ParameterCreate(values ParametersForm, errors map[string]string) {
 }
 
 templ UpdateParameters(values *structs.Parameters, errors map[string]string) {
-        <div id="parametersID">parameter ID: {strconv.Itoa(values.ParametersID)}</div>
+        <div id="parameters_id">parameter ID: {strconv.Itoa(values.ParametersID)}</div>
         <div class="mb-2">
             <label for="minimum">Minimum: </label>
             <input type="number" pattern="[0-9]" name="minimum" id="minimum" class="form-control" value={strconv.Itoa(values.MinimumCount)} required/>

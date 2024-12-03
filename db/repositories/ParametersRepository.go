@@ -29,9 +29,7 @@ func GetParameters(ctx context.Context, dbpool *pgxpool.Pool, params *structs.Pa
 	flag := false
 
 	err = pgxscan.Get(ctx, dbpool, params, `SELECT parameters_id, min_count, max_count, deadline FROM parameters WHERE parameters_id=$1;`, paramID)
-	if errors.Is(err, sql.ErrNoRows) {
-		return false
-	} else {
+	if !errors.Is(err, sql.ErrNoRows) {
 		flag = true
 	}
 	return flag

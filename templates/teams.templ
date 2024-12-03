@@ -59,12 +59,13 @@ templ TeamEdit(teamValues *structs.Team, paramValues *structs.Parameters, errors
         </head>
 
         <form hx-post="/edit-team" hx-indicator="#spinner">
+            <div id="team_id">Team ID: {strconv.Itoa(teamValues.TeamID)}</div>
             <div class="mb-2">
                 <label for="team_name">Team Name: </label>
                 <input type="text" name="team_name" id="team_name" class="form-control" value={teamValues.TeamName}/>
             </div>
             <div class="mb-3">
-                <label for="liaison">Liaison: </label>
+                <label for="liaison">Liaison Student Number: </label>
                 <input type="text" name="liaison" id="liaison" class="form-control" value={strconv.Itoa(teamValues.Liaison)}/>
             </div>
             @UpdateParameters(paramValues, errors)

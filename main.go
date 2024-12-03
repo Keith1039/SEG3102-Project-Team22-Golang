@@ -34,13 +34,6 @@ func init() {
 		os.Exit(1)
 	}
 
-	var greeting string
-	err = dbpool.QueryRow(ctx, "select 'Hello, world!'").Scan(&greeting)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
-		os.Exit(1)
-	}
-
 	fmt.Println("The database is connected")
 }
 
@@ -140,8 +133,8 @@ func HandleParameterCreation(w http.ResponseWriter, r *http.Request) {
 		minCount, err = strconv.Atoi(r.PostFormValue("minimum"))
 		maxCount, err2 = strconv.Atoi(r.PostFormValue("maximum"))
 		if err == nil && err2 == nil {
-			params := structs.Parameters{MinimumCount: minCount, MaximumCount: maxCount}
-			repositories.SaveParameters(ctx, dbpool, params)
+			tempParams := structs.Parameters{MinimumCount: minCount, MaximumCount: maxCount}
+			repositories.SaveParameters(ctx, dbpool, tempParams)
 			Render(w, r, templates.ParameterCreate(templates.ParametersForm{Minimum: "", Maximum: ""}, errors))
 		} else {
 			errors["Conversion"] = "Conversion error"
@@ -156,12 +149,58 @@ func GetTeamsAndRedirect(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetTeamAndRedirect(w http.ResponseWriter, r *http.Request) {
-	var params structs.Parameters
 	teamID, _ := strconv.Atoi(r.URL.Query().Get("id"))
 	repositories.GetTeam(ctx, dbpool, &team, teamID)
 	repositories.GetParameters(ctx, dbpool, &params, team.ParametersID)
-
 	hxRedirect(w, r, "/team")
+}
+
+func ValidateAndSave(w http.ResponseWriter, r *http.Request) {
+	var paramID, minimum, maximum, teamID, liaison int
+	errors := map[string]string{}
+	tempTeam := structs.Team{}
+	tempParams := structs.Parameters{}
+	var err error
+	fmt.Println(r.PostFormValue("parameter_id"))
+	paramID, err = strconv.Atoi(r.PostFormValue("parameter_id"))
+	tempParams.ParametersID = paramID
+	minimum, err = strconv.Atoi(r.PostFormValue("minimum"))
+	if err != nil {
+		errors["MinimumCount"] = "Invalid value entered"
+	} else {
+		tempParams.MinimumCount = minimum
+	}
+
+	maximum, err = strconv.Atoi(r.PostFormValue("maximum"))
+	if err != nil {
+		errors["MaximumCount"] = "Invalid value entered"
+	} else {
+		tempParams.MaximumCount = maximum
+	}
+
+	teamID, err = strconv.Atoi(r.PostFormValue("team_id"))
+	tempTeam.TeamID = teamID
+	teamName := r.PostFormValue("team_name")
+	tempTeam.TeamName = teamName
+	liaison, err = strconv.Atoi(r.PostFormValue("liaison"))
+	if err != nil {
+		errors["liaison"] = "Invalid value"
+	} else {
+		if repositories.CheckStudentNumber(ctx, dbpool, liaison) {
+			tempTeam.Liaison = liaison
+		} else {
+			errors["liaison"] = "Student number doesn't exist"
+
+		}
+	}
+
+	if len(errors) > 0 {
+		errors = tempParams.Validate()
+		if len(errors) > 0 {
+			// now we can save
+		}
+	}
+	Render(w, r, templates.TeamEdit(&tempTeam, &tempParams, errors))
 }
 
 func hxRedirect(w http.ResponseWriter, r *http.Request, url string) error {
